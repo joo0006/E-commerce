@@ -4,7 +4,7 @@ An e-commerce application built with FastAPI, similar to Flipkart/Amazon.
 
 ## Installation
 
-- Clone the repository: `git clone https://github.com/yourusername/ecommerce-app.git`
+- Clone the repository: `git clone
 - Change to the project directory: `cd ecommerce-app`
 - Create a virtual environment (recommended): `python -m venv venv`
 - Activate the virtual environment:
@@ -29,14 +29,6 @@ An e-commerce application built with FastAPI, similar to Flipkart/Amazon.
 - Create a new branch: `git checkout -b feature/add-new-feature`
 - Make changes, write tests, and ensure code quality.
 - Submit a pull request.
-
-## Deployment
-
-- Follow the deployment instructions in [Deployment.md].
-
-## Troubleshooting
-
-- Refer to the Troubleshooting Guide (TROUBLESHOOTING.md) for solutions to common issues.
 
 
 ## Future Development
