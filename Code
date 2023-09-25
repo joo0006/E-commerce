@@ -1,0 +1,110 @@
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import List, Optional
+import datetime
+
+app = FastAPI()
+
+# Sample product data
+products = {
+    1: {
+        "name": "TV",
+        "price": 999.99,
+        "quantity": 10
+    },
+    2: {
+        "name": "Laptop",
+        "price": 1299.99,
+        "quantity": 5
+    },
+    3: {
+        "name": "Phone",
+        "price": 699.99,
+        "quantity": 20
+    },
+    # Add more products here
+}
+
+# Sample order data
+orders_db = []
+
+class Product(BaseModel):
+    name: str
+    price: float
+    quantity: int
+
+class OrderItem(BaseModel):
+    productId: int
+    product_name : str
+    bought_quantity: int
+    total_amount: float
+
+class UserAddress(BaseModel):
+    city: str
+    country: str
+    zip_code: str
+
+class Order(BaseModel):
+    order_id: str
+    timestamp: str
+    items: List[OrderItem]
+    user_address: UserAddress
+
+# API to list all available products
+@app.get("/products")
+def list_products():
+    return list(products.values())
+
+# API to create a new order
+@app.post("/orders", response_model=Order)
+def create_order(order: Order):
+    total_amount = 0.0
+    
+    # Calculate total amount and update product quantities
+    for item in order.items:
+        product_id = item.productId
+        if product_id not in products:
+            raise HTTPException(status_code=400, detail=f"Product with ID {product_id} not found")
+        if products[product_id]["quantity"] < item.bought_quantity:
+            raise HTTPException(status_code=400, detail=f"Insufficient quantity for product with ID {product_id}")
+        
+        product_price = products[product_id]["price"]
+        total_amount += product_price * item.bought_quantity
+        
+        # Update product quantity
+        products[product_id]["quantity"] -= item.bought_quantity
+    
+    # Generate a unique order_id (you can use a better method in a real app)
+    order_id = str(datetime.datetime.now().timestamp())
+    
+    # Create the order
+    order_data = Order(order_id=order_id, timestamp=datetime.datetime.now().isoformat(),
+                       totalAmount=total_amount, **order.dict())
+    
+    # Add the order to the database
+    orders_db.append(order_data)
+    
+    return order_data
+
+# API to fetch all orders with pagination
+@app.get("/orders", response_model=List[Order])
+def fetch_orders(limit: int = 10, offset: int = 0):
+    if offset < 0 or limit <= 0:
+        raise HTTPException(status_code=400, detail="Invalid offset or limit values")
+    return orders_db[offset: offset + limit]
+
+# API to fetch a single order by Order ID
+@app.get("/orders/{order_id}", response_model=Order)
+def fetch_order(order_id: str):
+    for order in orders_db:
+        if order.order_id == order_id:
+            return order
+    raise HTTPException(status_code=404, detail=f"Order with ID {order_id} not found")
+
+# API to update a product's available quantity
+@app.put("/products/{product_id}")
+def update_product(product_id: int, product: Product):
+    if product_id not in products:
+        raise HTTPException(status_code=404, detail=f"Product with ID {product_id} not found")
+    products[product_id] = product.dict()
+    return {"message": f"Product with ID {product_id} updated successfully"}
